@@ -3,12 +3,28 @@ var Errors = require("../models/errors");
 const MediaPlayersModel = require("../models/mediaplayers");
 
 const axios = require("axios");
+//URL Wrapper
 const apiUrl = "http://0.0.0.0:1342/api/";
 
-/** /INFO */
-exports.GETMediaPlayers = (req, res, next) => {
+/* URL CCWS
+http://127.0.0.1:44642/dtv/mediaplayers/1
+*/
+
+
+exports.GETMediaPlayer = (req, res, next) => {
+  //checa se o player id esta na lista
+  const mediaPlayer = MediaPlayersModel.getMediaPlayerById(req.params.playerid);
+  if (mediaPlayer.length === 0) {
+    res.status(404).json(Errors.getError(101));
+  }
   axios.get(apiUrl+"info")
-  .then((response)=> res.json(response.data));
+        .then((response)=> {
+          console.log("GET /api/info status:", response.status);
+          res.json(response.data)
+        })
+        .catch(err => {
+          console.error(err);
+        });
 };
 
 /** /SOURCE 
@@ -20,118 +36,103 @@ exports.GETMediaPlayers = (req, res, next) => {
   }
 */
 
-exports.POSTMediaSource = (req, res, next) => {
-  axios.post(apiUrl+"source", req.body).then((response) => 
-  res.json(response.data));
-  console.log(req.body);
-};
+/**
+ * estrutura para post
+ {
+    "url": "",
+    "action": "",
+    "pos": {"x": , "y": , "w": , "h": },
+    "vol": "",
+    "currTime": ""
+}
+ */
 
-/** /PLAY */
-exports.POSTPlayMedia = (req, res, next) => {
-  axios.post(apiUrl+"play").then((response) => {
-    res.json((response.data));
-  });
-};
+function sleep(ms) {
+  return new Promise (resolve => setTimeout(resolve, ms));
+}
 
-/** /STOP */
-exports.POSTStopMedia = (req, res, next) => {
-  axios.post(apiUrl+"stop").then((response) => {
-    res.json((response.data));
-  });
-};
-
-
-/*exports.GETMediaPlayers = (req, res, next) => {
-  const mediaPlayers = MediaPlayersModel.getMediaPlayers();
-  res.json(mediaPlayers);
-};
-
-exports.GETMediaPlayer = (req, res, next) => {
-  const mediaPlayer = MediaPlayersModel.getMediaPlayerById(req.params.playerid);
-  if (mediaPlayer.length === 0) {
-    res.status(404).json(Errors.getError(101));
-  } else res.json(mediaPlayer[0]);
-};*/
-
-exports.GETMediaPlayer = (req, res, next) => {
-  //checa se o player id esta na lista
-  const mediaPlayer = MediaPlayersModel.getMediaPlayerById(req.params.playerid);
-  if (mediaPlayer.length === 0) {
-    res.status(404).json(Errors.getError(101));
-  }
-  axios.get(apiUrl+"info")
-        .then((response)=> {
-          res.json(response.data)
-        })
-        .catch(err => {
-          console.error(err);
-        });
-};
-
-exports.POSTMediaPlayer = (req, res, next) => {
+exports.POSTMediaPlayer = async (req, res, next) => {
   //checa se o player id esta na lista
   const mediaPlayer = MediaPlayersModel.getMediaPlayerById(req.params.playerid);
   if (mediaPlayer.length === 0) {
     res.status(404).json(Errors.getError(101));
   } 
 
-  //url: string url -> mpd mp4
+  //delay default para fazer a execucao esperar
+  const defDelay = 500;
+
+  //URL: string url, formatos mpd mp4
   const url = req.body.url;
   if (url !== undefined){
+    //cria source para ser enviado ao wrapper e
+    //checa formato mpd ou mp4
     const source = {
                       "fileType": "",
                       "locationType": "http",
-                      "location": ""
+                      "location": url
                     }
     if(url.endsWith('.mpd')){
       source.fileType = "dash"
-      source.location = url;
 
-      axios.post(apiUrl+"source", source).then((response) => {
-        //nao precisa responder
-        res.json(response.data)
+      await axios.post(apiUrl+"source", source).then((response) => {
+        console.log("POST /api/source status:", response.status);
+      }).catch(err => {
+        console.error(err);
       });
-
+      await sleep(defDelay);
     }
     else if(url.endsWith('.mp4')){
       source.fileType = "mp4";
-      source.fileType = url;
+      source.locationType = "localFile";
 
-      axios.post(apiUrl+"source", source).then((response) => {
-        //nao precisa responder
-        res.json(response.data)
-    });
-
+      await axios.post(apiUrl+"source", source).then((response) => {
+        console.log("POST /api/source status: ", response.status);
+      }).catch(err => {
+      console.error(err);
+      });
+      await sleep(defDelay);
     }
     else {
-      //formato de arquivo nao suportado
+      //formato de arquivo nao suportado ou incorreto
       res.status(404).json(Errors.getError(101)
         .description.replace("[argumentName]", "'url'"));
         return;
     }
   } else {
-    //url indefinido
-    
+    //url nao esta presente na requisicao, indefinido
   }
 
-  //action: string prepare start pause resume stop unload
+  //ACTION: string prepare start pause resume stop unload
   const action = req.body.action;
   if (action !== undefined){
-    if(action === "start" || "resume"){
+
+    if(action === "start" || action === "resume"){
       axios.post(apiUrl+"play").then((response) => {
-        console.log("Play");
+        console.log("POST /api/play status: ", response.status);
+      }).catch(err => {
+        console.error(err);
       });
+      await sleep(defDelay);
     } 
+
     else if(action === "stop"){
       axios.post(apiUrl+"stop").then((response) => {
-        console.log("Stop");
+        console.log("POST /api/stop status:", response.status);
+      }).catch(err => {
+        console.error(err);
       });
+      await sleep(defDelay);
     } 
+
     else if(action === "pause"){
-      axios.post(apiUrl+"pause").then((response) => {
-        console.log("Pause");
+      await axios.post(apiUrl+"pause").then((response) => {
+        console.log("POST /api/pause status:", response.status);
+      }).catch(err => {
+        console.error(err);
       });
+      await sleep(defDelay);
     } 
+
     else if(action === "prepare"){
       /*axios.post(apiUrl+" ").then((response) => {
         console.log("Prepare");
@@ -142,6 +143,7 @@ exports.POSTMediaPlayer = (req, res, next) => {
         console.log("Unload");
       });*/
     } 
+
     else {
       //action definida incorretamente
       res.status(404).json(Errors.getError(101)
@@ -149,27 +151,41 @@ exports.POSTMediaPlayer = (req, res, next) => {
       return;
     }
   } else {
-    // erro action indefinido
+    // action nao esta presente na requisicao, indefinido
   }
   
   //pos: integer x y w h
   const pos = req.body.pos;
   if(pos !== undefined) {
+    if(pos.x < 0 || pos.y < 0 || pos.w < 0 || pos.h < 0) {
+      res.status(404).json(Errors.getError(101)
+        .description.replace("[argumentName]", "'pos'"));
+      return;
+    }
+
     const {x, y, h, w} = pos;
     const jsonResult = {x, y, h, w};
-    
 
-    axios.post(apiUrl+"resize", jsonResult).then((response) => {
-      res.json((response.data))
+    await axios.post(apiUrl+"resize", jsonResult).then((response) => {
+      //nao precisa responder
+      console.log("POST /api/resize status: ", response.status);
+    }).catch(err => {
+      console.error(err);
     });
+    await sleep(defDelay);
     return;
   } else {
-    // pos indefinido
+    // pos nao esta presente na requisicao, indefinido
   }
 
   //vol: integer volume
   const vol = req.body.vol;
   if (vol !== undefined){
+    if (vol < 0 || vol > 100){
+      res.status(404).json(Errors.getError(101)
+        .description.replace("[argumentName]", "'vol'"));
+      return;
+    }
 
   } else {
     //vol indefinido
@@ -178,17 +194,26 @@ exports.POSTMediaPlayer = (req, res, next) => {
   //currTime: integer time in ms
   const currTime = req.body.currTime;
   if (currTime !== undefined){
+    if(currTime < 0){
+      res.status(404).json(Errors.getError(101)
+        .description.replace("[argumentName]", "'currTime'"));
+      return;
+    }
 
   } else {
     //currTime indefinido
   }
-/*
-  axios.get(apiUrl+"info")
-        .then((response)=> {
-          res.json(response.data)
-        })
-        .catch(err => {
-          console.error(err);
-        });
-        */
+
+  await sleep(0);
+  await axios.get(apiUrl+"info")
+  .then((response)=> {
+    console.log("GET /api/info status:", response.status);
+    res.json(response.data)
+  })
+  .catch(err => {
+    console.error(err);
+  });
+
+  await sleep(1000);
+  console.log(" ")
 };

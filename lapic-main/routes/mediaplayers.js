@@ -4,14 +4,7 @@ var router = express.Router();
 
 /* Media player API */
 /* 8.5.2 */
-router.get('/', MediaPlayersController.GETMediaPlayers);
-
-/* */
-router.get('/info', MediaPlayersController.GETMediaPlayers);
-router.post('/source', MediaPlayersController.POSTMediaSource);
-router.post('/play', MediaPlayersController.POSTPlayMedia);
-router.post('/stop', MediaPlayersController.POSTStopMedia);
-
+router.get('/', MediaPlayersController.GETMediaPlayer);
 
 /* 8.5.3 */
 router.get('/:playerid', MediaPlayersController.GETMediaPlayer);
