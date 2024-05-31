@@ -19,6 +19,7 @@ exports.GETMediaPlayers = (req, res, next) => {
     "location": "/home/lapic/player/persistent-media-player-gstreamer-wrapper/videos/Channel_ID_5.1+4.mp4"
   }
 */
+
 exports.POSTMediaSource = (req, res, next) => {
   axios.post(apiUrl+"source", req.body).then((response) => 
   res.json(response.data));
@@ -74,29 +75,77 @@ exports.POSTMediaPlayer = (req, res, next) => {
     res.status(404).json(Errors.getError(101));
   } 
 
-  //url: string url
+  //url: string url -> mpd mp4
   const url = req.body.url;
   if (url !== undefined){
+    const source = {
+                      "fileType": "",
+                      "locationType": "http",
+                      "location": ""
+                    }
+    if(url.endsWith('.mpd')){
+      source.fileType = "dash"
+      source.location = url;
 
+      axios.post(apiUrl+"source", source).then((response) => {
+        //nao precisa responder
+        res.json(response.data)
+      });
+
+    }
+    else if(url.endsWith('.mp4')){
+      source.fileType = "mp4";
+      source.fileType = url;
+
+      axios.post(apiUrl+"source", source).then((response) => {
+        //nao precisa responder
+        res.json(response.data)
+    });
+
+    }
+    else {
+      //formato de arquivo nao suportado
+      res.status(404).json(Errors.getError(101)
+        .description.replace("[argumentName]", "'url'"));
+        return;
+    }
   } else {
     //url indefinido
+    
   }
 
   //action: string prepare start pause resume stop unload
   const action = req.body.action;
   if (action !== undefined){
-    if(action === "start"){
+    if(action === "start" || "resume"){
       axios.post(apiUrl+"play").then((response) => {
         console.log("Play");
       });
-    } else if(action === "stop"){
+    } 
+    else if(action === "stop"){
       axios.post(apiUrl+"stop").then((response) => {
         console.log("Stop");
       });
-    } else {
+    } 
+    else if(action === "pause"){
+      axios.post(apiUrl+"pause").then((response) => {
+        console.log("Pause");
+      });
+    } 
+    else if(action === "prepare"){
+      /*axios.post(apiUrl+" ").then((response) => {
+        console.log("Prepare");
+      });*/
+    } 
+    else if(action === "unload"){
+      /*axios.post(apiUrl+" ").then((response) => {
+        console.log("Unload");
+      });*/
+    } 
+    else {
       //action definida incorretamente
-      console.log("Action nao definida corretamente");
-      res.json("Action nao definida corretamente");
+      res.status(404).json(Errors.getError(101)
+        .description.replace("[argumentName]", "'action'"));
       return;
     }
   } else {
@@ -106,10 +155,14 @@ exports.POSTMediaPlayer = (req, res, next) => {
   //pos: integer x y w h
   const pos = req.body.pos;
   if(pos !== undefined) {
-    const posX = req.body.pos.x;
-    const posY = req.body.pos.y;
-    const posW = req.body.pos.w;
-    const posH = req.body.pos.h;
+    const {x, y, h, w} = pos;
+    const jsonResult = {x, y, h, w};
+    
+
+    axios.post(apiUrl+"resize", jsonResult).then((response) => {
+      res.json((response.data))
+    });
+    return;
   } else {
     // pos indefinido
   }
@@ -129,7 +182,7 @@ exports.POSTMediaPlayer = (req, res, next) => {
   } else {
     //currTime indefinido
   }
-
+/*
   axios.get(apiUrl+"info")
         .then((response)=> {
           res.json(response.data)
@@ -137,4 +190,5 @@ exports.POSTMediaPlayer = (req, res, next) => {
         .catch(err => {
           console.error(err);
         });
+        */
 };
