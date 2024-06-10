@@ -200,11 +200,22 @@ exports.POSTMediaPlayer = async (req, res, next) => {
       return;
     }
 
+    const jsonSeek = {
+      "value": currTime/1000
+    }
+    
+    await axios.post(apiUrl+"seek", jsonSeek).then((response) => {
+      //nao precisa responder
+      console.log("POST /api/seek status: ", response.status);
+    }).catch(err => {
+      console.error(err);
+    });
+
   } else {
     //currTime indefinido
   }
 
-  await sleep(0);
+  await sleep(1000);
   await axios.get(apiUrl+"info")
   .then((response)=> {
     console.log("GET /api/info status:", response.status);
