@@ -59,7 +59,7 @@ exports.POSTMediaPlayer = async (req, res, next) => {
   } 
 
   //delay default para fazer a execucao esperar
-  const defDelay = 500;
+  const defDelay = 1000;
 
   //URL: string url, formatos mpd mp4
   const url = req.body.url;
@@ -90,7 +90,7 @@ exports.POSTMediaPlayer = async (req, res, next) => {
       }).catch(err => {
       console.error(err);
       });
-      await sleep(defDelay);
+      await sleep(1500);
     }
     else {
       //formato de arquivo nao suportado ou incorreto
@@ -167,7 +167,6 @@ exports.POSTMediaPlayer = async (req, res, next) => {
     const jsonResult = {x, y, h, w};
 
     await axios.post(apiUrl+"resize", jsonResult).then((response) => {
-      //nao precisa responder
       console.log("POST /api/resize status: ", response.status);
     }).catch(err => {
       console.error(err);
@@ -187,6 +186,16 @@ exports.POSTMediaPlayer = async (req, res, next) => {
       return;
     }
 
+    const jsonSeek = {
+      "value": vol/100
+    }
+    await sleep(defDelay);
+    await axios.post(apiUrl+"volume", jsonSeek).then((response) => {
+      console.log("POST /api/volume status: ", response.status);
+    }).catch(err => {
+      console.error(err);
+    });
+
   } else {
     //vol indefinido
   }
@@ -203,9 +212,8 @@ exports.POSTMediaPlayer = async (req, res, next) => {
     const jsonSeek = {
       "value": currTime/1000
     }
-    
+    await sleep(defDelay);
     await axios.post(apiUrl+"seek", jsonSeek).then((response) => {
-      //nao precisa responder
       console.log("POST /api/seek status: ", response.status);
     }).catch(err => {
       console.error(err);
