@@ -223,7 +223,7 @@ exports.POSTMediaPlayer = async (req, res, next) => {
     //currTime indefinido
   }
 
-  await sleep(1000);
+  await sleep(defDelay);
   await axios.get(apiUrl+"info")
   .then((response)=> {
     console.log("GET /api/info status:", response.status);
@@ -233,6 +233,6 @@ exports.POSTMediaPlayer = async (req, res, next) => {
     console.error(err);
   });
 
-  await sleep(1000);
+  await sleep(defDelay);
   console.log(" ")
 };
