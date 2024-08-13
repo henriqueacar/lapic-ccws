@@ -81,6 +81,16 @@ exports.POSTMediaPlayer = async (req, res, next) => {
       });
       await sleep(defDelay);
     }
+    else if(url.endsWith('.m3u8')){
+      /*source.fileType = "mp4";
+      source.locationType = "localFile";*/
+      await axios.post(apiUrl+"source", source).then((response) => {
+        console.log("POST /api/source status: ", response.status);
+      }).catch(err => {
+      console.error(err);
+      });
+      await sleep(1500);
+    }
     else if(url.endsWith('.mp4')){
       source.fileType = "mp4";
       source.locationType = "localFile";
@@ -172,7 +182,6 @@ exports.POSTMediaPlayer = async (req, res, next) => {
       console.error(err);
     });
     await sleep(defDelay);
-    return;
   } else {
     // pos nao esta presente na requisicao, indefinido
   }
